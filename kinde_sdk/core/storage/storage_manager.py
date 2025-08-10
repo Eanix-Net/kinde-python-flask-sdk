@@ -81,33 +81,18 @@ class StorageManager:
                 if self._device_id:
                     return self._device_id
 
-                # Try to derive a stable fingerprint from request IP and User-Agent
-                ip_address = ""
-                user_agent = ""
                 try:
                     request = FrameworkContext.get_request()
                     if request:
-                        try:
-                            xff = request.headers.get("X-Forwarded-For")
-                        except Exception:
-                            xff = None
-                        remote_addr = getattr(request, "remote_addr", None)
-                        candidate_ip = xff or remote_addr or ""
-                        if "," in candidate_ip:
-                            candidate_ip = candidate_ip.split(",")[0].strip()
-                        ip_address = candidate_ip
-                        try:
-                            user_agent = request.headers.get("User-Agent", "")
-                        except Exception:
-                            user_agent = ""
+                        session_id = self._storage.cookie_get("eanix_session")
+                        if session_id:
+                            self._device_id = hashlib.sha256(session_id.encode()).hexdigest()[0:16]
+                            return self._device_id
                 except Exception:
                     # Ignore request lookup failures; fallback to UUID
                     pass
 
-                if ip_address and user_agent:
-                    self._device_id = hashlib.sha256(f"{ip_address}{user_agent}".encode()).hexdigest()[0:8]
-                else:
-                    self._device_id = str(uuid.uuid4())
+                self._device_id = str(uuid.uuid4())
                     
             return self._device_id
     
