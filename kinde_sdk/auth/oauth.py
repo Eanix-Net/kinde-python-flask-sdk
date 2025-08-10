@@ -81,13 +81,14 @@ class OAuth:
             self._logger.setLevel(logging.INFO)
 
 
-            self._initialize_framework()
-
             # Create storage manager
             self._storage_manager = StorageManager()
 
             # Initialize storage directly without framework dependencies
             self._initialize_storage()
+            
+            self._initialize_framework()
+
 
             # Session manager created after framework/storage are initialized
             self._session_manager = UserSession()
@@ -108,15 +109,32 @@ class OAuth:
         if self.framework and self.app:
             from kinde_sdk.core.framework.framework_factory import FrameworkFactory
             
+            # Ensure Flask framework is registered
+            if self.framework == "flask":
+                try:
+                    # Import flask framework module to trigger registration
+                    import kinde_sdk.core.framework.flask
+                    self._logger.info("Flask framework module imported and registered")
+                except ImportError as e:
+                    self._logger.error(f"Failed to import Flask framework: {e}")
+                    raise
+            
             # Create framework instance
             config = {"type": self.framework}
+            self._logger.info(f"Creating framework with config: {config}")
             self._framework = FrameworkFactory.create_framework(config, self.app)
+            self._logger.info(f"Framework created: {self._framework}")
             
             # Connect OAuth to framework
             self._framework.set_oauth(self)
+            self._logger.info("OAuth connected to framework")
             
             # START THE FRAMEWORK - This is where FrameworkInterface.start() gets called
             self._framework.start()
+            self._logger.info("Framework started successfully")
+        else:
+            self._logger.warning(f"Framework initialization skipped - framework: {self.framework}, app: {self.app}")
+            self._framework = None
     def _initialize_storage(self) -> None:
         """
         Initialize storage directly using RedisStorage as primary backend.
@@ -176,42 +194,53 @@ class OAuth:
         """
         Check if the user is authenticated using the session manager.
         
-        Args:
-            request (Optional[Any]): The current request object
-            
         Returns:
             bool: True if the user is authenticated, False otherwise
         """
-        # Get user ID from framework
-        self._logger.debug(f"self._framework: {self._framework}")
-        user_id = self._framework.get_user_id()
-        self._logger.debug(f"user_id: {user_id}")
-        if not user_id:
-            self._logger.debug("No user ID found in session")
+        # Check if framework is initialized
+        if not self._framework:
+            self._logger.debug("Framework not initialized, cannot check authentication")
             return False
             
-        # Check authentication using session manager
-        self._logger.debug(f"self._session_manager: {self._session_manager}")
-        return self._session_manager.is_authenticated(user_id)
+        # Get user ID from framework
+        self._logger.debug(f"self._framework: {self._framework}")
+        try:
+            user_id = self._framework.get_user_id()
+            self._logger.debug(f"user_id: {user_id}")
+            if not user_id:
+                self._logger.debug("No user ID found in session")
+                return False
+                
+            # Check authentication using session manager
+            self._logger.debug(f"self._session_manager: {self._session_manager}")
+            return self._session_manager.is_authenticated(user_id)
+        except Exception as e:
+            self._logger.error(f"Error checking authentication: {e}")
+            return False
 
     def get_user_info(self) -> Dict[str, Any]:
         """
         Get the user information from the session.
         
-        Args:
-            request (Optional[Any]): The current request object
-            
         Returns:
             Dict[str, Any]: The user information
             
         Raises:
-            KindeConfigurationException: If no user ID is found in session
+            KindeConfigurationException: If no user ID is found in session or framework not initialized
         """
+        # Check if framework is initialized
+        if not self._framework:
+            raise KindeConfigurationException("Framework not initialized")
+            
         # Get user ID from framework
         self._logger.debug(f"Retrieve the user id")
-        user_id = self._framework.get_user_id()
-        if not user_id:
-            raise KindeConfigurationException("No user ID found in session")
+        try:
+            user_id = self._framework.get_user_id()
+            if not user_id:
+                raise KindeConfigurationException("No user ID found in session")
+        except Exception as e:
+            self._logger.error(f"Error getting user ID: {e}")
+            raise KindeConfigurationException(f"Failed to get user ID: {str(e)}")
             
         # Get token manager for the user
         self._logger.debug(f"User id: {user_id} retrieve the token for the user id")

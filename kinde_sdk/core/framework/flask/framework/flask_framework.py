@@ -178,17 +178,32 @@ class FlaskFramework(FrameworkInterface):
         self._logger.info("Registering Kinde routes")
         # Login route
         def login():
-            _request = self.get_request()
-            if _request or request:
-                self._storage_manager.storage.cookie_set("_device_id", {"value": self._storage_manager.get_device_id(), "timestamp": time.time()})
-
             """Redirect to Kinde login page."""
-            login_url = self._run_coroutine_sync(self._oauth.login())
-            return redirect(login_url)
+            if not self._oauth:
+                return "OAuth not initialized", 500
+                
+            try:
+                # Set device ID if available
+                if hasattr(self._oauth, '_storage_manager') and self._oauth._storage_manager:
+                    storage_manager = self._oauth._storage_manager
+                    if hasattr(storage_manager, 'storage') and storage_manager.storage:
+                        storage_manager.storage.cookie_set(
+                            "_device_id", 
+                            {"value": storage_manager.get_device_id(), "timestamp": time.time()}
+                        )
+                
+                login_url = self._run_coroutine_sync(self._oauth.login())
+                return redirect(login_url)
+            except Exception as e:
+                self._logger.error(f"Login error: {e}")
+                return f"Login failed: {str(e)}", 500
 
         # Callback route
         def callback():
             """Handle the OAuth callback from Kinde."""
+            if not self._oauth:
+                return "OAuth not initialized", 500
+                
             import base64
             import json
             from urllib.parse import urlencode, urlparse, parse_qs, urlunparse
@@ -264,35 +279,63 @@ class FlaskFramework(FrameworkInterface):
         # Logout route
         def logout():
             """Logout the user and redirect to Kinde logout page."""
-            user_id = session.get('user_id')
-            session.clear()
-            logout_url = self._run_coroutine_sync(self._oauth.logout(user_id))
-            return redirect(logout_url)
+            if not self._oauth:
+                return "OAuth not initialized", 500
+                
+            try:
+                user_id = session.get('user_id')
+                session.clear()
+                logout_url = self._run_coroutine_sync(self._oauth.logout(user_id))
+                return redirect(logout_url)
+            except Exception as e:
+                self._logger.error(f"Logout error: {e}")
+                return f"Logout failed: {str(e)}", 500
         
         # Register route
         def register():
-            if self.get_request():
-                self._storage_manager.storage.cookie_set("_device_id", {"value": self._storage_manager.get_device_id(), "timestamp": time.time()})
-
             """Redirect to Kinde registration page."""
-            register_url = self._run_coroutine_sync(self._oauth.register())
-            return redirect(register_url)
+            if not self._oauth:
+                return "OAuth not initialized", 500
+                
+            try:
+                # Set device ID if available
+                if hasattr(self._oauth, '_storage_manager') and self._oauth._storage_manager:
+                    storage_manager = self._oauth._storage_manager
+                    if hasattr(storage_manager, 'storage') and storage_manager.storage:
+                        storage_manager.storage.cookie_set(
+                            "_device_id", 
+                            {"value": storage_manager.get_device_id(), "timestamp": time.time()}
+                        )
+                
+                register_url = self._run_coroutine_sync(self._oauth.register())
+                return redirect(register_url)
+            except Exception as e:
+                self._logger.error(f"Register error: {e}")
+                return f"Registration failed: {str(e)}", 500
         
         # User info route
         def get_user():
             """Get the current user's information."""
-            _request =  self.get_request()
-            if _request or request:
-                self._storage_manager.storage.cookie_set("_device_id", {"value": self._storage_manager.get_device_id(), "timestamp": time.time()})
-
-
+            if not self._oauth:
+                return "OAuth not initialized", 500
+                
             try:
-                if not self._oauth.is_authenticated(request):
+                # Set device ID if available
+                if hasattr(self._oauth, '_storage_manager') and self._oauth._storage_manager:
+                    storage_manager = self._oauth._storage_manager
+                    if hasattr(storage_manager, 'storage') and storage_manager.storage:
+                        storage_manager.storage.cookie_set(
+                            "_device_id", 
+                            {"value": storage_manager.get_device_id(), "timestamp": time.time()}
+                        )
+
+                if not self._oauth.is_authenticated():
                     login_url = self._run_coroutine_sync(self._oauth.login())
                     return redirect(login_url)
                 
-                return self._oauth.get_user_info(request)
+                return self._oauth.get_user_info()
             except Exception as e:
+                self._logger.error(f"Get user error: {e}")
                 return f"Failed to get user info: {str(e)}", 400
 
         # Register routes using add_url_rule to avoid decorator edge cases
