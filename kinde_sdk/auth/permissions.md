@@ -79,28 +79,24 @@ async def create_todo_button():
     return None
 ```
 
-### Example 2: Permission-Based API Endpoint
+### Example 2: Permission-Based API Endpoint (Flask)
 
 ```python
-from fastapi import APIRouter, HTTPException
+from flask import Flask, jsonify, request
 from kinde_sdk.auth import permissions
 
-router = APIRouter()
+app = Flask(__name__)
 
-@router.post("/todos")
-async def create_todo(todo_data: dict):
+@app.post("/todos")
+async def create_todo():
     # Check if user has permission to create todos
     permission = await permissions.get_permission("create:todos")
     
     if not permission["isGranted"]:
-        raise HTTPException(
-            status_code=403,
-            detail="You don't have permission to create todos"
-        )
+        return jsonify({"detail": "You don't have permission to create todos"}), 403
     
     # User has permission, proceed with creating todo
-    # ... create todo logic ...
-    return {"message": "Todo created successfully"}
+    return jsonify({"message": "Todo created successfully"})
 ```
 
 ### Example 3: Organization-Specific Permissions

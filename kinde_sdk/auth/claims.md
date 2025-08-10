@@ -78,27 +78,24 @@ async def get_user_profile():
     return None
 ```
 
-### Example 2: Token Validation
+### Example 2: Token Validation (Flask)
 
 ```python
-from fastapi import APIRouter, HTTPException
+from flask import Flask, jsonify
 from kinde_sdk.auth import claims
 
-router = APIRouter()
+app = Flask(__name__)
 
-@router.get("/api/protected")
+@app.get("/api/protected")
 async def protected_endpoint():
     # Check if token is valid and has required audience
     aud_claim = await claims.get_claim("aud")
     
     if not aud_claim["value"] or "api.yourapp.com" not in aud_claim["value"]:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token audience"
-        )
+        return jsonify({"detail": "Invalid token audience"}), 401
     
     # Token is valid, proceed with request
-    return {"message": "Access granted"}
+    return jsonify({"message": "Access granted"})
 ```
 
 ### Example 3: Organization Context

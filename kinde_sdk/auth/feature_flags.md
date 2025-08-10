@@ -88,29 +88,27 @@ async def get_user_theme():
     }
 ```
 
-### Example 3: Feature Limits
+### Example 3: Feature Limits (Flask)
 
 ```python
-from fastapi import APIRouter, HTTPException
+from flask import Flask, jsonify, request
 from kinde_sdk.auth import feature_flags
 
-router = APIRouter()
+app = Flask(__name__)
 
-@router.post("/competitions")
-async def create_competition(competition_data: dict):
+@app.post("/competitions")
+async def create_competition():
     # Check competition limit
     limit_flag = await feature_flags.get_flag("competitions_limit", default_value=3)
     current_count = await get_user_competition_count()  # Your implementation
     
     if current_count >= limit_flag.value:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Competition limit reached (max: {limit_flag.value})"
-        )
+        return jsonify({
+            "detail": f"Competition limit reached (max: {limit_flag.value})"
+        }), 403
     
     # Create competition
-    # ... your implementation ...
-    return {"message": "Competition created successfully"}
+    return jsonify({"message": "Competition created successfully"})
 ```
 
 ## Error Handling

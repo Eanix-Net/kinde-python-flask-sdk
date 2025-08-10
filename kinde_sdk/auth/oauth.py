@@ -122,6 +122,27 @@ class OAuth:
         # Initialize storage manager with the framework-specific storage
         self._storage_manager.initialize(config={"type": self.framework, "device_id": self._framework.get_name()}, storage=self._storage)
 
+        # Log runtime storage backend details
+        self._log_storage_backend("initialize_framework")
+
+    def _log_storage_backend(self, context: str) -> None:
+        """
+        Emit diagnostic logs about the active storage backend to help
+        verify that framework storage is wired correctly at runtime.
+        """
+        try:
+            storage = self._storage_manager.storage
+            storage_cls = type(storage).__name__ if storage is not None else "None"
+            storage_type = getattr(self._storage_manager, "storage_type", "unknown")
+            self._logger.info(f"[{context}] Storage backend class={storage_cls} storage_type={storage_type}")
+            if self.framework == "flask" and "FlaskStorage" not in storage_cls:
+                self._logger.warning(
+                    f"[{context}] Expected FlaskStorage when framework='flask' but got {storage_cls}. "
+                    "Ensure 'kinde_flask' is imported before OAuth initialization and that OAuth(framework='flask', app=app) is used."
+                )
+        except Exception as e:
+            self._logger.error(f"[{context}] Failed to log storage backend: {e}")
+
     def is_authenticated(self) -> bool:
         """
         Check if the user is authenticated using the session manager.
@@ -296,6 +317,9 @@ class OAuth:
                 # Convert all values to strings for URL parameters
                 search_params[key] = str(value) if value is not None else ""
         
+        # Verify storage backend at runtime before persisting state
+        self._log_storage_backend("generate_auth_url:pre_state")
+
         # Generate state if not provided
         state = login_options.get(LoginOptions.STATE, generate_random_string(32))
         search_params["state"] = state
@@ -491,6 +515,9 @@ class OAuth:
         Returns:
             Dict with user and token information
         """
+        # Verify storage backend before reading state
+        self._log_storage_backend("handle_redirect:pre_state")
+
         # Verify state if provided
         if state:
             stored_state = self._session_manager.storage_manager.get("state")

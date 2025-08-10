@@ -16,7 +16,7 @@ class StorageFactory:
         Register a framework-specific storage factory.
         
         Args:
-            framework (str): The framework name (e.g., 'fastapi', 'flask')
+            framework (str): The framework name (e.g., 'flask')
             factory_class (Type): The storage factory class for the framework
         """
         logger.info(f"Registering storage factory: {framework}")

@@ -151,7 +151,6 @@ class TestSDKTracking(unittest.TestCase):
             (None, "Python/2.0.0/3.11.0/python"),
             ("Flask", "Python-Flask/2.0.0/3.11.0/python"),
             ("Django", "Python-Django/2.0.0/3.11.0/python"),
-            ("FastAPI", "Python-FastAPI/2.0.0/3.11.0/python"),
         ]
         
         for framework, expected_header in test_cases:

@@ -1117,7 +1117,7 @@ class TestHelpers(unittest.TestCase):
                     mock_run.assert_called_once()
 
     def test_get_user_details_sync_with_event_loop(self):
-        """Test get_user_details_sync when event loop is running (FastAPI scenario)."""
+        """Test get_user_details_sync when event loop is running (async scenario)."""
         # Mock dependencies
         userinfo_url = "https://test.kinde.com/api/v1/user"
         token_manager = MagicMock()

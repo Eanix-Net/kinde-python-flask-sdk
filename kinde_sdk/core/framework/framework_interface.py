@@ -14,7 +14,7 @@ class FrameworkInterface(ABC):
         Get the name of the framework.
         
         Returns:
-            str: The name of the framework (e.g., 'fastapi', 'flask', 'django')
+            str: The name of the framework (e.g., 'flask', 'django')
         """
         pass
     

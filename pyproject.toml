@@ -1,6 +1,6 @@
 [project]
-name = "kinde-python-sdk"
-version = "2.0.10"
+name = "kinde-python-flask-sdk"
+version = "0.7.0"
 authors = [
     { name = "Kinde Engineering", email = "engineering@kinde.com" },
 ]
@@ -8,7 +8,7 @@ description = "Connect your app to the Kinde platform"
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 5 - Development/Beta",
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
@@ -38,31 +38,25 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-fastapi = [
-    "fastapi >=0.110.0, <1.0.0",
-    "python-multipart >=0.0.6, <1.0.0",
-    "uvicorn >=0.25.0, <0.26.0",
-]
 flask = [
     "flask >=3.0.0, <4.0.0",
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/kinde-oss/kinde-python-sdk"
+"Homepage" = "https://github.com/Eanix-Net/kinde-python-flask-sdk"
 
 [build-system]
 requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["kinde_sdk", "kinde_fastapi", "kinde_flask"]
+packages = ["kinde_sdk", "kinde_flask"]
 package-dir = {"" = "."}
 include-package-data = true
 zip-safe = false
 
 [tool.setuptools.package-data]
 "kinde_sdk" = ["**/*.py", "**/*.json", "**/*.yaml", "**/*.yml"]
-"kinde_fastapi" = ["**/*.py", "**/*.json", "**/*.yaml", "**/*.yml"]
 "kinde_flask" = ["**/*.py", "**/*.json", "**/*.yaml", "**/*.yml"]
 
 [tool.poetry.dev-dependencies]

@@ -21,7 +21,7 @@ from kinde_sdk import OAuth
 
 # Initialize
 oauth = OAuth(
-    framework="flask",  # or "fastapi"
+    framework="flask",
     app=app
 )
 
@@ -80,22 +80,7 @@ def home():
     return "Please login"
 ```
 
-### FastAPI
-```python
-from fastapi import FastAPI
-from kinde_sdk import OAuth
-from kinde_sdk.auth import feature_flags
 
-app = FastAPI()
-oauth = OAuth(framework="fastapi", app=app)
-
-@app.get("/")
-async def home():
-    if oauth.is_authenticated():
-        flags = await feature_flags.get_all_flags()
-        return {"user": oauth.get_user_info(), "flags": flags}
-    return {"message": "Please login"}
-```
 
 ## Common Error Solutions
 

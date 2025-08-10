@@ -25,75 +25,7 @@ For details on integrating this SDK into your project, head over to the [Kinde d
 
 ## Basic Usage: Framework Integrations
 
-The Kinde Python SDK provides seamless integration with popular Python web frameworks. Below are detailed guides for using Kinde with FastAPI and Flask.
-
-### FastAPI Integration
-
-The `kinde_fastapi` module provides easy integration with FastAPI applications.
-
-#### Installation
-
-```bash
-pip install fastapi uvicorn python-multipart
-```
-
-#### Basic Setup
-
-```python
-from fastapi import FastAPI
-from kinde_sdk.auth.oauth import OAuth
-
-# Initialize FastAPI app
-app = FastAPI()
-
-# Initialize Kinde OAuth with FastAPI framework
-kinde_oauth = OAuth(
-    framework="fastapi",
-    app=app
-)
-
-# Example home route
-@app.get("/")
-async def home(request: Request):
-    if kinde_oauth.is_authenticated():
-        user = kinde_oauth.get_user_info()
-        return f"Welcome, {user.get('email', 'User')}!"
-    return "Please log in"
-```
-
-#### Configuration
-
-Create a `.env` file with your Kinde credentials:
-
-```env
-KINDE_CLIENT_ID=your_client_id
-KINDE_CLIENT_SECRET=your_client_secret
-KINDE_REDIRECT_URI=http://localhost:8000/callback
-KINDE_DOMAIN=your_kinde_domain
-```
-
-#### Available Routes
-
-The FastAPI integration automatically provides these routes:
-
-- `/login` - Redirects to Kinde login
-- `/callback` - Handles OAuth callback
-- `/logout` - Logs out the user
-- `/register` - Redirects to Kinde registration
-- `/user` - Returns user information
-
-#### Protected Routes
-
-```python
-from fastapi import Depends
-from kinde_sdk.management.kinde_api_client import KindeApiClient
-
-@router.get("/protected")
-async def protected_route(
-    kinde_client: KindeApiClient = Depends(get_kinde_client)
-):
-    return {"message": "This is a protected route"}
-```
+The Kinde Python SDK provides seamless integration with Flask.
 
 ### Flask Integration
 
@@ -177,7 +109,7 @@ def protected_route():
 
 #### Security Considerations
 
-For both FastAPI and Flask integrations:
+For Flask integration:
 
 1. Always use HTTPS in production
 2. Use a secure session secret key
@@ -696,7 +628,7 @@ With Framework: Python-Flask/2.0.0/3.11.0/python
 
 Auto-detects these frameworks:
 
-Django, Flask, FastAPI (more frameworks can be added)
+Django, Flask (more frameworks can be added)
 
 ## Version Detection
 

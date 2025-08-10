@@ -28,8 +28,8 @@ class FrameworkAwareStorage(StorageInterface):
             return None
             
         # Framework-specific session access
-        if hasattr(request, 'session'):  # FastAPI
-            self._logger.debug("FastAPI session found")
+        if hasattr(request, 'session'):
+            self._logger.debug("Framework session found")
             return request.session
         elif hasattr(request, 'environ'):  # Flask
             self._logger.debug("Flask session found")

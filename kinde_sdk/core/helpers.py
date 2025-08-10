@@ -699,7 +699,7 @@ def get_user_details_sync(userinfo_url: str, token_manager, logger) -> Dict[str,
     """
     Retrieve user information synchronously, handling both sync and async contexts.
     
-    This function works in both Flask (no event loop) and FastAPI (has event loop) environments.
+    This function works in both synchronous and asynchronous runtime environments.
     
     Args:
         userinfo_url: URL for user information endpoint
@@ -716,7 +716,7 @@ def get_user_details_sync(userinfo_url: str, token_manager, logger) -> Dict[str,
     try:
         # Check if we're in an event loop
         asyncio.get_running_loop()
-        # We're in an event loop (FastAPI), so we can't use asyncio.run()
+        # An event loop is running, so we can't use asyncio.run()
         # Instead, we'll make a synchronous request directly
         access_token = token_manager.get_access_token()
         headers = {
@@ -727,5 +727,5 @@ def get_user_details_sync(userinfo_url: str, token_manager, logger) -> Dict[str,
         response.raise_for_status()
         return response.json()
     except RuntimeError:
-        # No event loop running (Flask), use asyncio.run
+        # No event loop running, use asyncio.run
         return asyncio.run(get_user_details(userinfo_url, token_manager, logger))

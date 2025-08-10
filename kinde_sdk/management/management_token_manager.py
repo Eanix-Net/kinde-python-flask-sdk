@@ -20,9 +20,7 @@ class SDKTracker:
     # Framework detection mapping
     FRAMEWORK_DETECTION = {
         'django': 'Django',
-        'flask': 'Flask', 
-        'fastapi': 'FastAPI',
-        'starlette': 'Starlette',
+        'flask': 'Flask',
         'tornado': 'Tornado',
         'pyramid': 'Pyramid',
         'bottle': 'Bottle',
@@ -117,8 +115,7 @@ class ManagementTokenManager:
     SDK_PACKAGE_NAME = "kinde-python-sdk"
     FRAMEWORK_DETECTION = {
         'django': 'Django',
-        'flask': 'Flask', 
-        'fastapi': 'FastAPI'
+        'flask': 'Flask'
     }
 
     @classmethod

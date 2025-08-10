@@ -9,13 +9,8 @@ This document outlines the key changes and migration steps when upgrading from K
 ## Major Changes
 
 ### 1. Framework-Specific Implementations
-The v2.0 SDK introduces dedicated framework implementations for:
-- Flask
-- FastAPI
-
-Each framework has its own package with optimized implementations:
+The v2.0 SDK introduces a dedicated framework implementation for Flask:
 - `kinde_flask`
-- `kinde_fastapi`
 
 ### 2. Authentication Flow
 The authentication implementation has been completely revamped:
@@ -98,29 +93,7 @@ if kinde_oauth.is_authenticated():
 **📖 See complete Flask example:** `kinde_flask/examples/example_app.py`
 
 #### FastAPI
-```python
-# ✅ NEW (v2)
-from kinde_sdk import OAuth
-from kinde_sdk.auth import claims, feature_flags, permissions
-
-# Initialize FastAPI app
-app = FastAPI(title="Kinde FastAPI Example")
-
-# Initialize Kinde OAuth with FastAPI framework
-kinde_oauth = OAuth(
-    framework="fastapi",
-    app=app
-)
-
-# Check authentication and get user info
-if kinde_oauth.is_authenticated():
-    user = kinde_oauth.get_user_info()
-    all_claims = await claims.get_all_claims()
-    all_flags = await feature_flags.get_all_flags()
-    all_permissions = await permissions.get_permissions()
-```
-
-**📖 See complete FastAPI example:** `kinde_fastapi/examples/example_app.py`
+This SDK no longer provides FastAPI integration or examples.
 
 ### 3. Authentication Changes
 ```python
@@ -165,21 +138,15 @@ token_info = tokens.get_token_info()
 print(token_info)
 ```
 
-## Framework Examples
+## Framework Example
 
-For complete, working examples of how to integrate the Kinde Python SDK v2 with your framework, see:
+For a complete, working example of how to integrate the Kinde Python SDK v2 with Flask, see:
 
-### Flask Example
 - **Location:** `kinde_flask/examples/example_app.py`
 - **Features:** Basic authentication flow, user info display, login/logout functionality
 - **Key highlights:** Simple Flask integration with session management
 
-### FastAPI Example  
-- **Location:** `kinde_fastapi/examples/example_app.py`
-- **Features:** Full authentication flow, claims, feature flags, permissions, and token access
-- **Key highlights:** Async/await support, comprehensive SDK feature demonstration
-
-Both examples include:
+The example includes:
 - Environment variable configuration
 - Session middleware setup
 - Authentication status checking
@@ -301,7 +268,7 @@ oauth = OAuth()
 
 # ✅ Correct
 oauth = OAuth(
-    framework="flask",  # or "fastapi"
+    framework="flask",
     app=app
 )
 ```
