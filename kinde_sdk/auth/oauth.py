@@ -20,6 +20,7 @@ from kinde_sdk.core.exceptions import (
     KindeTokenException,
     KindeRetrieveException
 )
+import traceback
 
 class OAuth:
     def __init__(
@@ -55,41 +56,45 @@ class OAuth:
         # Make Flask the default framework for this SDK
         self.framework = "flask"
         self.app = app
-        
-        # Validate required configurations
-        if not self.client_id:
-            raise KindeConfigurationException("Client ID is required.")
-        
-        # Initialize API endpoints
-        self._set_api_endpoints()
+        try:
+            # Validate required configurations
+            if not self.client_id:
+                raise KindeConfigurationException("Client ID is required.")
+            
+            # Initialize API endpoints
+            self._set_api_endpoints()
 
-        # Load configuration
-        if config_file:
-            self._config = load_config(config_file)
-            storage_config = self._config.get("storage", {"type": "memory"})
-        elif storage_config is None:
-            storage_config = {"type": "memory"}
-            self._config = {"storage": storage_config}
-        elif storage_config is not None:
-            self._config = {"storage": storage_config}
+            # Load configuration
+            if config_file:
+                self._config = load_config(config_file)
+                storage_config = self._config.get("storage", {"type": "memory"})
+            elif storage_config is None:
+                storage_config = {"type": "memory"}
+                self._config = {"storage": storage_config}
+            elif storage_config is not None:
+                self._config = {"storage": storage_config}
 
-        # Create storage manager
-        self._storage_manager = StorageManager()
+            # Create storage manager
+            self._storage_manager = StorageManager()
 
-        # Logging settings (must be initialized before any framework init that logs)
-        self._logger = logging.getLogger("kinde_sdk")
-        self._logger.setLevel(logging.INFO)
+            # Logging settings (must be initialized before any framework init that logs)
+            self._logger = logging.getLogger("kinde_sdk")
+            self._logger.setLevel(logging.INFO)
 
-        # Initialize Flask framework by default (first-class citizen)
-        self._initialize_flask()
+            # Initialize Flask framework by default (first-class citizen)
+            self._initialize_flask()
 
-        # Session manager created after framework/storage are initialized
-        self._session_manager = UserSession()
+            # Session manager created after framework/storage are initialized
+            self._session_manager = UserSession()
 
-        # Authentication properties
-        self.verify_ssl = True
-        self.proxy = None
-        self.proxy_headers = None
+            # Authentication properties
+            self.verify_ssl = True
+            self.proxy = None
+            self.proxy_headers = None
+        except Exception as e:
+            self._logger.error(f"Failed to initialize OAuth: {e}")
+            self._logger.error(f"Traceback: {traceback.format_exc()}")
+            raise e
 
     def _initialize_flask(self) -> None:
         """
