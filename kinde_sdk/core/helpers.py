@@ -699,7 +699,8 @@ def get_user_details_sync(userinfo_url: str, token_manager, logger) -> Dict[str,
     """
     Retrieve user information synchronously, handling both sync and async contexts.
     
-    This function works in both synchronous and asynchronous runtime environments.
+    This function works in both synchronous and asynchronous runtime environments
+    and recovers gracefully from closed event loops.
     
     Args:
         userinfo_url: URL for user information endpoint
@@ -715,17 +716,47 @@ def get_user_details_sync(userinfo_url: str, token_manager, logger) -> Dict[str,
     """
     try:
         # Check if we're in an event loop
-        asyncio.get_running_loop()
-        # An event loop is running, so we can't use asyncio.run()
-        # Instead, we'll make a synchronous request directly
-        access_token = token_manager.get_access_token()
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Accept": "application/json"
-        }
-        response = requests.get(userinfo_url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except RuntimeError:
-        # No event loop running, use asyncio.run
-        return asyncio.run(get_user_details(userinfo_url, token_manager, logger))
+        running_loop = asyncio.get_running_loop()
+        if running_loop and running_loop.is_running():
+            # An event loop is running, so we can't use asyncio.run()
+            # Instead, we'll make a synchronous request directly
+            access_token = token_manager.get_access_token()
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Accept": "application/json"
+            }
+            response = requests.get(userinfo_url, headers=headers)
+            response.raise_for_status()
+            return response.json()
+    except RuntimeError as e:
+        # Handle both "no event loop" and "event loop is closed" cases
+        if 'event loop is closed' in str(e).lower():
+            # Create a new event loop to recover from closed loop
+            loop = asyncio.new_event_loop()
+            try:
+                asyncio.set_event_loop(loop)
+                return loop.run_until_complete(get_user_details(userinfo_url, token_manager, logger))
+            finally:
+                loop.close()
+                try:
+                    asyncio.set_event_loop(None)
+                except Exception:
+                    pass
+        else:
+            # No event loop running, use asyncio.run
+            try:
+                return asyncio.run(get_user_details(userinfo_url, token_manager, logger))
+            except RuntimeError as nested_e:
+                if 'event loop is closed' in str(nested_e).lower():
+                    # Fallback: create fresh loop
+                    loop = asyncio.new_event_loop()
+                    try:
+                        asyncio.set_event_loop(loop)
+                        return loop.run_until_complete(get_user_details(userinfo_url, token_manager, logger))
+                    finally:
+                        loop.close()
+                        try:
+                            asyncio.set_event_loop(None)
+                        except Exception:
+                            pass
+                raise

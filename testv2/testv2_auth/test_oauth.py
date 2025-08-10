@@ -19,16 +19,59 @@ from kinde_sdk.core.exceptions import (
     KindeRetrieveException,
 )
 
-# Helper function to run async tests in unittest
+# Helper function to run async tests in unittest with closed loop recovery
 def run_async(coro):
     try:
         # Use the running event loop if available
         loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # Create a new event loop if none exists
-        loop = asyncio.new_event_loop()
+        if loop and loop.is_running():
+            return loop.run_until_complete(coro)
+    except RuntimeError as e:
+        # Handle both "no event loop" and "event loop is closed" cases
+        if 'event loop is closed' in str(e).lower():
+            # Create a new event loop to recover from closed loop
+            loop = asyncio.new_event_loop()
+            try:
+                asyncio.set_event_loop(loop)
+                return loop.run_until_complete(coro)
+            finally:
+                loop.close()
+                try:
+                    asyncio.set_event_loop(None)
+                except Exception:
+                    pass
+        else:
+            # Create a new event loop if none exists
+            loop = asyncio.new_event_loop()
+            try:
+                asyncio.set_event_loop(loop)
+                return loop.run_until_complete(coro)
+            except RuntimeError as nested_e:
+                if 'event loop is closed' in str(nested_e).lower():
+                    # Final fallback: force create fresh loop
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        return loop.run_until_complete(coro)
+                    finally:
+                        loop.close()
+                        try:
+                            asyncio.set_event_loop(None)
+                        except Exception:
+                            pass
+                raise
+    
+    # Fallback for cases where no exception was raised but no loop was found
+    loop = asyncio.new_event_loop()
+    try:
         asyncio.set_event_loop(loop)
-    return loop.run_until_complete(coro)
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+        try:
+            asyncio.set_event_loop(None)
+        except Exception:
+            pass
 
 class TestOAuthExtended(unittest.TestCase):
     def setUp(self):
