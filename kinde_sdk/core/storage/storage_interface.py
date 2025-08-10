@@ -27,6 +27,28 @@ class StorageInterface(ABC):
             value (Dict): The data to store.
         """
         pass
+    
+    @abstractmethod
+    def cookie_set(self, key: str, value: Dict) -> None:
+        """
+        Store data associated with the given key.
+        
+        Args:
+            key (str): The key to store the data under.
+            value (Dict): The data to store.
+        """
+        pass
+    
+    @abstractmethod
+    def cookie_get(self, key: str) -> Dict:
+        """
+        Store data associated with the given key.
+        
+        Args:
+            key (str): The key to store the data under.
+            value (Dict): The data to store.
+        """
+        pass
 
     @abstractmethod
     def set_flat(self, value: str) -> None:

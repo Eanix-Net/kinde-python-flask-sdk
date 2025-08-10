@@ -29,6 +29,17 @@ class FrameworkMiddleware:
         Returns:
             Response: The processed response.
         """
-        # Clear the framework context
-        FrameworkContext.clear_request()
-        return response 
+        try:
+            # If any cookies were queued on the request by storage, set them on the response
+            cookies_to_set = getattr(request, "_kinde_cookies_to_set", None)
+            if isinstance(cookies_to_set, dict):
+                for name, val in cookies_to_set.items():
+                    try:
+                        response.set_cookie(name, val, httponly=True, secure=True, samesite="Lax")
+                    except Exception:
+                        # Best-effort; continue setting other cookies
+                        pass
+        finally:
+            # Clear the framework context regardless of cookie handling outcome
+            FrameworkContext.clear_request()
+        return response

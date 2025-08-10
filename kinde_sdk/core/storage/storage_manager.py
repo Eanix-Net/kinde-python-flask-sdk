@@ -2,10 +2,12 @@
 import threading
 import uuid
 import time
+import hashlib
 from typing import Dict, Any, Optional
 from .storage_factory import StorageFactory
 from .storage_interface import StorageInterface
-
+from kinde_sdk.core.framework.framework_context import FrameworkContext
+import os
 class StorageManager:
     _instance = None
     _lock = threading.Lock()  # Lock for thread safety
@@ -41,10 +43,12 @@ class StorageManager:
         """
         with self._lock:
             if config is None:
-                config = {"type": "memory"}
+                # Extract it from redis_url
+                redis_url = os.getenv("KINDE_REDIS_URL", "redis://redis:6379/0")
+                config = {"type": "redis", "host": redis_url.split("//")[1].split(":")[0], "port": int(redis_url.split(":")[2].split("/")[0]), "db": int(redis_url.split("/")[1])}
                 
             # Set storage type
-            self._storage_type = config.get("type", "memory")
+            self._storage_type = config.get("type", "flask")
                 
             # Clear any existing storage first
             self._storage = None
@@ -63,7 +67,7 @@ class StorageManager:
                 self._device_id = str(uuid.uuid4())
                 
             # Store the device ID in storage for persistence
-            self._storage.set("_device_id", {"value": self._device_id, "timestamp": time.time()})
+            self._storage.session_set("_device_id", {"value": self._device_id, "timestamp": time.time()})
 
     def get_device_id(self) -> str:
         """
@@ -74,14 +78,39 @@ class StorageManager:
         """
         with self._lock:
             if not self._device_id:
-                # Try to load from storage
-                stored_device = self.get("_device_id")
-                if stored_device and "value" in stored_device:
-                    self._device_id = stored_device["value"]
+                # Try to get the device id from the cookie
+                self._device_id = self._storage.cookie_get("_device_id")
+                if self._device_id:
+                    return self._device_id
+
+                # Try to derive a stable fingerprint from request IP and User-Agent
+                ip_address = ""
+                user_agent = ""
+                try:
+                    request = FrameworkContext.get_request()
+                    if request:
+                        try:
+                            xff = request.headers.get("X-Forwarded-For")
+                        except Exception:
+                            xff = None
+                        remote_addr = getattr(request, "remote_addr", None)
+                        candidate_ip = xff or remote_addr or ""
+                        if "," in candidate_ip:
+                            candidate_ip = candidate_ip.split(",")[0].strip()
+                        ip_address = candidate_ip
+                        try:
+                            user_agent = request.headers.get("User-Agent", "")
+                        except Exception:
+                            user_agent = ""
+                except Exception:
+                    # Ignore request lookup failures; fallback to UUID
+                    pass
+
+                if ip_address and user_agent:
+                    self._device_id = hashlib.sha256(f"{ip_address}{user_agent}".encode()).hexdigest()[0:8]
                 else:
-                    # Generate a new device ID
                     self._device_id = str(uuid.uuid4())
-                    self.setItems("_device_id", {"value": self._device_id, "timestamp": time.time()})
+                self._storage.cookie_set("_device_id", {"value": self._device_id, "timestamp": time.time()})
                     
             return self._device_id
     
@@ -121,10 +150,6 @@ class StorageManager:
             str: A namespaced key including device ID
         """
         device_id = self.get_device_id()
-        
-        # If the key is for the device ID itself, don't namespace it
-        if key == "_device_id":
-            return key
             
         # Special handling for keys that should be global (shared across devices)
         if key.startswith("global:"):
