@@ -56,6 +56,7 @@ class OAuth:
         # Framework-agnostic approach - no specific framework dependencies
         self.framework = None
         self.app = app
+        
         try:
             # Validate required configurations
             if not self.client_id:
@@ -73,6 +74,8 @@ class OAuth:
                 self._config = {"storage": storage_config}
             elif storage_config is not None:
                 self._config = {"storage": storage_config}
+
+            self._initialize_framework()
 
             # Create storage manager
             self._storage_manager = StorageManager()

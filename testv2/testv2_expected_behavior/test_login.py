@@ -67,7 +67,7 @@ class TestExpectedLogin(unittest.TestCase):
     def test_register_flow_v2(self):
         async def async_register_test():
             # Set up OAuth instance with necessary framework
-            self.oauth.framework = "memory"
+            self.oauth.framework = "flask"
             self.oauth._initialize_framework()  # Initialize the framework
 
             # Generate login URL (this part is fine)
