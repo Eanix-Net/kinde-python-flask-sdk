@@ -3,21 +3,18 @@ import requests
 import logging
 import time
 import asyncio
-from typing import Any, Dict, List, Optional, Tuple, Union
-from urllib.parse import urlencode, urlparse, quote
+from typing import Any, Dict, Optional
+from urllib.parse import urlencode
 
 from .user_session import UserSession
 from kinde_sdk.core.storage.storage_manager import StorageManager
 from kinde_sdk.core.storage.storage_factory import StorageFactory
 from .config_loader import load_config
-from .enums import GrantType, IssuerRouteTypes, PromptTypes
+from .enums import IssuerRouteTypes, PromptTypes
 from .login_options import LoginOptions
-from kinde_sdk.core.helpers import generate_random_string, base64_url_encode, generate_pkce_pair, get_user_details as helper_get_user_details, get_user_details_sync
+from kinde_sdk.core.helpers import generate_random_string, generate_pkce_pair, get_user_details as helper_get_user_details, get_user_details_sync
 from kinde_sdk.core.exceptions import (
     KindeConfigurationException,
-    KindeLoginException,
-    KindeTokenException,
-    KindeRetrieveException,
 )
 
 class OAuth:
@@ -73,20 +70,16 @@ class OAuth:
 
         # Create storage manager
         self._storage_manager = StorageManager()
-        
-        # Initialize Flask framework by default (first-class citizen)
-        if self.framework == "flask":
-            self._initialize_flask()
-        else:
-            # Use configuration-based storage for non-Flask explicit cases
-            self._storage = StorageFactory.create_storage(storage_config)
-            self._storage_manager.initialize(config=storage_config, storage=self._storage)
 
-        self._session_manager = UserSession()
-
-        # Logging settings
+        # Logging settings (must be initialized before any framework init that logs)
         self._logger = logging.getLogger("kinde_sdk")
         self._logger.setLevel(logging.INFO)
+
+        # Initialize Flask framework by default (first-class citizen)
+        self._initialize_flask()
+
+        # Session manager created after framework/storage are initialized
+        self._session_manager = UserSession()
 
         # Authentication properties
         self.verify_ssl = True

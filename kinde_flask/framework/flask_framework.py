@@ -32,9 +32,6 @@ class FlaskFramework(FrameworkInterface):
         self._initialized = False
         self._oauth = None
         
-        # Configure Flask application secret (for client-side sessions)
-        self.app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')
-        
         # Enable nested event loops
         nest_asyncio.apply()
     
@@ -118,6 +115,11 @@ class FlaskFramework(FrameworkInterface):
             oauth (OAuth): The OAuth instance
         """
         self._oauth = oauth
+        # Expose on Flask app for compatibility with code expecting app.kinde_oauth
+        try:
+            setattr(self.app, 'kinde_oauth', oauth)
+        except Exception:
+            pass
     
     def _register_kinde_routes(self) -> None:
         """
