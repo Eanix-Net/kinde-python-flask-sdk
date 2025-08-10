@@ -339,10 +339,10 @@ class FlaskFramework(FrameworkInterface):
                 return f"Failed to get user info: {str(e)}", 400
 
         # Register routes using add_url_rule to avoid decorator edge cases
-        self.app.add_url_rule('/login', 'login', login)
-        self.app.add_url_rule('/callback', 'callback', callback)
-        self.app.add_url_rule('/logout', 'logout', logout)
-        self.app.add_url_rule('/register', 'register', register)
-        self.app.add_url_rule('/user', 'user', get_user)
+        self.app.add_url_rule('/login', 'kinde_login', login)
+        self.app.add_url_rule('/callback', 'kinde_callback', callback)
+        self.app.add_url_rule('/logout', 'kinde_logout', logout)
+        self.app.add_url_rule('/register', 'kinde_register', register)
+        self.app.add_url_rule('/user', 'kinde_user', get_user)
 
         
