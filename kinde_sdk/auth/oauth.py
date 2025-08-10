@@ -98,7 +98,20 @@ class OAuth:
             self._logger.error(f"Failed to initialize OAuth: {e}")
             self._logger.error(f"Traceback: {traceback.format_exc()}")
             raise e
-
+    def _initialize_framework(self) -> None:
+        """Initialize the framework integration."""
+        if self.framework and self.app:
+            from kinde_sdk.core.framework.framework_factory import FrameworkFactory
+            
+            # Create framework instance
+            config = {"type": self.framework}
+            self._framework = FrameworkFactory.create_framework(config, self.app)
+            
+            # Connect OAuth to framework
+            self._framework.set_oauth(self)
+            
+            # START THE FRAMEWORK - This is where FrameworkInterface.start() gets called
+            self._framework.start()
     def _initialize_storage(self) -> None:
         """
         Initialize storage directly using RedisStorage as primary backend.

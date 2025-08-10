@@ -10,6 +10,7 @@ import logging
 import nest_asyncio
 import flask
 import time
+from flask import request
 if TYPE_CHECKING:
     from flask import Request
     from kinde_sdk.auth.oauth import OAuth
@@ -174,7 +175,8 @@ class FlaskFramework(FrameworkInterface):
         """
         # Login route
         def login():
-            if self.get_request():
+            _request = self.get_request()
+            if _request or request:
                 self._storage_manager.storage.cookie_set("_device_id", {"value": self._storage_manager.get_device_id(), "timestamp": time.time()})
 
             """Redirect to Kinde login page."""
@@ -276,8 +278,8 @@ class FlaskFramework(FrameworkInterface):
         # User info route
         def get_user():
             """Get the current user's information."""
-            request =  self.get_request()
-            if request:
+            _request =  self.get_request()
+            if _request or request:
                 self._storage_manager.storage.cookie_set("_device_id", {"value": self._storage_manager.get_device_id(), "timestamp": time.time()})
 
 
