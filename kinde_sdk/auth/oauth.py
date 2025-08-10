@@ -27,6 +27,7 @@ class OAuth:
         self,
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
+        framework: Optional[str] = None,
         redirect_uri: Optional[str] = None,
         config_file: Optional[str] = None,
         storage_config: Optional[Dict[str, Any]] = None,
@@ -54,7 +55,7 @@ class OAuth:
         self.audience = audience or os.getenv("KINDE_AUDIENCE")
         self.state = state
         # Framework-agnostic approach - no specific framework dependencies
-        self.framework = None
+        self.framework = framework
         self.app = app
         
         try:
