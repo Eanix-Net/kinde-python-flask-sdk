@@ -1,6 +1,6 @@
 [project]
 name = "kinde-python-flask-sdk"
-version = "0.8.8"
+version = "0.8.9"
 authors = [
     { name = "Jared Weisinger", email = "daniel@jaredweisinger.com" },
     { name = "Eanix.net", email = "daniel@eanix.net" },

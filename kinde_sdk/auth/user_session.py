@@ -9,6 +9,7 @@ class UserSession:
         self.user_sessions = {}  # Store user-specific session data
         self.lock = threading.Lock()  # Add a lock for thread safety
         self.storage_manager = StorageManager()  # Use the provided storage backend
+        self.storage_manager.initialize()
 
     def set_user_data(self, user_id: str, user_info: Dict[str, Any], token_data: Dict[str, Any]):
         """Store user session details and associate tokens."""

@@ -27,7 +27,7 @@ class StorageManager:
         self._storage = None
         self._initialized = True
         self._device_id = None
-        self._storage_type = "memory"  # Default storage type
+        self._storage_type = "redis"  # Default storage type
 
     def initialize(self, config: Dict[str, Any] = None, device_id: Optional[str] = None, storage: Optional[StorageInterface] = None):
         """
