@@ -32,7 +32,9 @@ class FlaskFramework(FrameworkInterface):
         self.app = app or Flask(__name__)
         self._initialized = False
         self._oauth = None
-        
+        self._logger = logging.getLogger("kinde_sdk")
+        self._logger.setLevel(logging.DEBUG)
+        self._logger.propagate = True
         # Enable nested event loops
         nest_asyncio.apply()
 
@@ -173,6 +175,7 @@ class FlaskFramework(FrameworkInterface):
         """
         Register all Kinde-specific routes with the Flask application.
         """
+        self._logger.info("Registering Kinde routes")
         # Login route
         def login():
             _request = self.get_request()

@@ -75,15 +75,16 @@ class OAuth:
                 self._config = {"storage": storage_config}
             elif storage_config is not None:
                 self._config = {"storage": storage_config}
+                
+            # Logging settings (must be initialized before any framework init that logs)
+            self._logger = logging.getLogger("kinde_sdk")
+            self._logger.setLevel(logging.INFO)
+
 
             self._initialize_framework()
 
             # Create storage manager
             self._storage_manager = StorageManager()
-
-            # Logging settings (must be initialized before any framework init that logs)
-            self._logger = logging.getLogger("kinde_sdk")
-            self._logger.setLevel(logging.INFO)
 
             # Initialize storage directly without framework dependencies
             self._initialize_storage()
