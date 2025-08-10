@@ -13,7 +13,7 @@ except Exception:  # pragma: no cover
     redis = None  # type: ignore
 
 
-class FrameworkAwareStorage(StorageInterface):
+class RedisStorage(StorageInterface):
     """
     Redis-backed storage implementation that is framework-agnostic.
 
@@ -26,10 +26,9 @@ class FrameworkAwareStorage(StorageInterface):
         self._logger = logging.getLogger("redis")
         logging.basicConfig(level=logging.DEBUG)
         logging.getLogger("redis").setLevel(logging.DEBUG)
-        logging.config.fileConfig("logging.conf")
 
         if redis is None:
-            raise RuntimeError("redis package is required for FrameworkAwareStorage")
+            raise RuntimeError("redis package is required for RedisStorage")
 
         self._redis_url = (
             redis_url

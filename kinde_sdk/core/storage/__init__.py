@@ -2,13 +2,14 @@
 from .storage_interface import StorageInterface
 from .storage_factory import StorageFactory
 from .storage_manager import StorageManager
-from .memory_storage import MemoryStorage
-from .local_storage import LocalStorage
+from .redis_storage import RedisStorage
+from .redis_storage_factory import RedisStorageFactory, RedisFactory
 
 __all__ = [
     'StorageInterface',
     'StorageFactory',
     'StorageManager',
-    'MemoryStorage',
-    'LocalStorage',
+    'RedisStorage',
+    'RedisStorageFactory',
+    'RedisFactory',
 ]

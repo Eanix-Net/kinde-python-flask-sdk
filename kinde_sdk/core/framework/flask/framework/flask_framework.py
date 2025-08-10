@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any, TYPE_CHECKING
-from flask import Flask, request, redirect, session
+from flask import Flask, redirect, session
 from kinde_sdk.core.framework.framework_interface import FrameworkInterface
 from ..middleware.framework_middleware import FrameworkMiddleware
 import os
@@ -9,7 +9,7 @@ import threading
 import logging
 import nest_asyncio
 import flask
-
+import time
 if TYPE_CHECKING:
     from flask import Request
     from kinde_sdk.auth.oauth import OAuth
@@ -174,6 +174,9 @@ class FlaskFramework(FrameworkInterface):
         """
         # Login route
         def login():
+            if self.get_request():
+                self._storage_manager.storage.cookie_set("_device_id", {"value": self._storage_manager.get_device_id(), "timestamp": time.time()})
+
             """Redirect to Kinde login page."""
             login_url = self._run_coroutine_sync(self._oauth.login())
             return redirect(login_url)
@@ -263,6 +266,9 @@ class FlaskFramework(FrameworkInterface):
         
         # Register route
         def register():
+            if self.get_request():
+                self._storage_manager.storage.cookie_set("_device_id", {"value": self._storage_manager.get_device_id(), "timestamp": time.time()})
+
             """Redirect to Kinde registration page."""
             register_url = self._run_coroutine_sync(self._oauth.register())
             return redirect(register_url)
@@ -270,6 +276,11 @@ class FlaskFramework(FrameworkInterface):
         # User info route
         def get_user():
             """Get the current user's information."""
+            request =  self.get_request()
+            if request:
+                self._storage_manager.storage.cookie_set("_device_id", {"value": self._storage_manager.get_device_id(), "timestamp": time.time()})
+
+
             try:
                 if not self._oauth.is_authenticated(request):
                     login_url = self._run_coroutine_sync(self._oauth.login())

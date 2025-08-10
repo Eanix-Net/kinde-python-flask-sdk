@@ -45,10 +45,10 @@ class StorageManager:
             if config is None:
                 # Extract it from redis_url
                 redis_url = os.getenv("KINDE_REDIS_URL", "redis://redis:6379/0")
-                config = {"type": "redis", "host": redis_url.split("//")[1].split(":")[0], "port": int(redis_url.split(":")[2].split("/")[0]), "db": int(redis_url.split("/")[1])}
+                config = {"type": "redis", "host": redis_url.split("//")[1].split(":")[0], "port": int(redis_url.split(":")[2].rsplit("/")[0]), "db": int(redis_url.split(":")[2].rsplit("/")[1])}
                 
             # Set storage type
-            self._storage_type = config.get("type", "flask")
+            self._storage_type = config.get("type", "redis")
                 
             # Clear any existing storage first
             self._storage = None
@@ -66,8 +66,6 @@ class StorageManager:
                 # Generate a persistent device ID if none provided
                 self._device_id = str(uuid.uuid4())
                 
-            # Store the device ID in storage for persistence
-            self._storage.session_set("_device_id", {"value": self._device_id, "timestamp": time.time()})
 
     def get_device_id(self) -> str:
         """
@@ -110,7 +108,6 @@ class StorageManager:
                     self._device_id = hashlib.sha256(f"{ip_address}{user_agent}".encode()).hexdigest()[0:8]
                 else:
                     self._device_id = str(uuid.uuid4())
-                self._storage.cookie_set("_device_id", {"value": self._device_id, "timestamp": time.time()})
                     
             return self._device_id
     

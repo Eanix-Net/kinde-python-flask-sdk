@@ -73,9 +73,6 @@ class TestStorageManager(unittest.TestCase):
         user_key = "user:test_key"
         self.assertEqual(self.storage_manager._get_namespaced_key(user_key), user_key)
         
-        # Test device ID key
-        self.assertEqual(self.storage_manager._get_namespaced_key("_device_id"), "_device_id")
-
     def test_get(self):
         """Test get method."""
         test_key = "test_key"

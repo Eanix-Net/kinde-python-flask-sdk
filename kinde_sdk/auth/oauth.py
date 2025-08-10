@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from .user_session import UserSession
 from kinde_sdk.core.storage.storage_manager import StorageManager
 import kinde_sdk.core.exceptions as core_exceptions
-from kinde_sdk.core.storage.storage_factory import StorageFactory
+from kinde_sdk.core.storage.redis_storage_factory import RedisStorageFactory
 from .config_loader import load_config
 from .enums import IssuerRouteTypes, PromptTypes
 from .login_options import LoginOptions
@@ -53,8 +53,8 @@ class OAuth:
         self.host = host or os.getenv("KINDE_HOST", "https://app.kinde.com")
         self.audience = audience or os.getenv("KINDE_AUDIENCE")
         self.state = state
-        # Make Flask the default framework for this SDK
-        self.framework = "flask"
+        # Framework-agnostic approach - no specific framework dependencies
+        self.framework = None
         self.app = app
         try:
             # Validate required configurations
@@ -67,9 +67,9 @@ class OAuth:
             # Load configuration
             if config_file:
                 self._config = load_config(config_file)
-                storage_config = self._config.get("storage", {"type": "memory"})
+                storage_config = self._config.get("storage", {"type": "redis", "options": {"redis_url": os.getenv("KINDE_REDIS_URL") or "redis://redis:6379/0"}})
             elif storage_config is None:
-                storage_config = {"type": "memory"}
+                storage_config = {"type": "redis", "options": {"redis_url": os.getenv("KINDE_REDIS_URL") or "redis://redis:6379/0"}}
                 self._config = {"storage": storage_config}
             elif storage_config is not None:
                 self._config = {"storage": storage_config}
@@ -81,11 +81,14 @@ class OAuth:
             self._logger = logging.getLogger("kinde_sdk")
             self._logger.setLevel(logging.INFO)
 
-            # Initialize Flask framework by default (first-class citizen)
-            self._initialize_flask()
+            # Initialize storage directly without framework dependencies
+            self._initialize_storage()
 
             # Session manager created after framework/storage are initialized
             self._session_manager = UserSession()
+            
+            # Update storage manager with proper device ID now that session manager exists
+            self._update_storage_device_id()
 
             # Authentication properties
             self.verify_ssl = True
@@ -96,35 +99,55 @@ class OAuth:
             self._logger.error(f"Traceback: {traceback.format_exc()}")
             raise e
 
-    def _initialize_flask(self) -> None:
+    def _initialize_storage(self) -> None:
         """
-        Initialize Flask-specific components and storage directly.
+        Initialize storage directly using RedisStorage as primary backend.
+        No framework dependencies required.
         """
         try:
-            # Ensure flask framework and registration code is imported
-            from kinde_flask.framework.flask_framework import FlaskFramework
-            import kinde_flask  # triggers storage factory registration for 'flask'
+            # Use RedisStorage as primary storage via StorageFactory
+            storage_config = self._config.get("storage", {"type": "redis", "options": {"redis_url": os.getenv("KINDE_REDIS_URL") or "redis://redis:6379/0"}})
+            self._storage = RedisStorageFactory.create_storage(storage_config)
+            
+            # Initialize storage manager with device ID (will be set later by session manager)
+            self._storage_manager.initialize(
+                config={
+                    "type": "redis", 
+                    "device_id": "temp"  # Will be updated by session manager
+                }, 
+                storage=self._storage
+            )
+            
+            # No framework instance needed
+            self._framework = None
+
+            self._log_storage_backend("initialize_storage")
         except Exception as ex:
-            raise KindeConfigurationException(f"Failed to initialize Flask integration: {ex}")
+            raise KindeConfigurationException(f"Failed to initialize any storage backend: {ex}")
 
-        framework_impl = FlaskFramework(app=self.app)
-        framework_impl.set_oauth(self)
-        framework_impl.start()
-        self._framework = framework_impl
-
-        # Use the Flask storage via StorageFactory
-        self._storage = StorageFactory.create_storage({"type": "flask"})
-        self._storage_manager.initialize(config={"type": "flask", "device_id": self._session_manager.get_device_id()}, storage=self._storage)
-
-        self._log_storage_backend("initialize_flask")
+    def _update_storage_device_id(self) -> None:
+        """
+        Update the storage manager with the proper device ID from session manager.
+        """
+        try:
+            if self._session_manager and self._storage_manager:
+                device_id = self._storage_manager.get_device_id()
+                # Re-initialize storage manager with correct device ID
+                current_config = getattr(self._storage_manager, '_config', {})
+                updated_config = current_config.copy()
+                updated_config['device_id'] = device_id
+                self._storage_manager.initialize(config=updated_config, storage=self._storage)
+                self._logger.info(f"Updated storage manager with device_id: {device_id}")
+        except Exception as e:
+            self._logger.warning(f"Failed to update storage device ID: {e}")
 
     def _log_storage_backend(self, context: str) -> None:
         """
         Emit diagnostic logs about the active storage backend to help
-        verify that framework storage is wired correctly at runtime.
+        verify that storage is wired correctly at runtime.
         """
         try:
-            storage = self._storage_manager.storage()
+            storage = self._storage_manager.storage
             storage_cls = type(storage).__name__ if storage is not None else "None"
             storage_type = getattr(self._storage_manager, "storage_type", "unknown")
             self._logger.info(f"[{context}] Storage backend class={storage_cls} storage_type={storage_type}")

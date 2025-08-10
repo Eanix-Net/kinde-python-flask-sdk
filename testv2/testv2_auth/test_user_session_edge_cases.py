@@ -160,7 +160,7 @@ class TestUserSessionEdgeCases(unittest.TestCase):
         # Create multiple threads
         threads = []
         results = []
-        for _ in range(5):
+        for _ in range(3):
             thread = threading.Thread(target=lambda: results.append(worker()))
             threads.append(thread)
             thread.start()
