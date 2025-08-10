@@ -2,7 +2,6 @@ from typing import Dict, Any, Type
 from .storage_interface import StorageInterface
 from .memory_storage import MemoryStorage
 from .local_storage import LocalStorage
-from kinde_sdk.core.framework.framework_factory import FrameworkFactory
 import logging
 
 logger = logging.getLogger(__name__)
@@ -55,14 +54,6 @@ class StorageFactory:
                 logger.warning(f"Unsupported storage type: {storage_type}, falling back to memory storage")
                 return MemoryStorage()
         
-        # If no specific type, try to use the framework factory
-        framework = FrameworkFactory.create_framework(config)
-        framework_name = framework.get_name()
-        
-        if framework_name in cls._framework_factories:
-            factory_class = cls._framework_factories[framework_name]
-            return factory_class.create_storage(config)
-        
-        # If all else fails, use memory storage
-        logger.info("No storage type specified and auto-detection failed, using memory storage")
+        # If no specific type, default to memory storage to keep SDK lean
+        logger.info("No storage type specified; using memory storage by default")
         return MemoryStorage()

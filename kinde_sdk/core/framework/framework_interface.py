@@ -73,13 +73,3 @@ class FrameworkInterface(ABC):
             Optional[str]: The user ID, or None if not available
         """
         pass
-    
-    @abstractmethod
-    def can_auto_detect(self) -> bool:
-        """
-        Check if this framework can be auto-detected.
-        
-        Returns:
-            bool: True if the framework can be auto-detected, False otherwise
-        """
-        return False 

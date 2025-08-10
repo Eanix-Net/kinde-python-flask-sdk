@@ -9,7 +9,6 @@ from urllib.parse import urlencode, urlparse, quote
 from .user_session import UserSession
 from kinde_sdk.core.storage.storage_manager import StorageManager
 from kinde_sdk.core.storage.storage_factory import StorageFactory
-from kinde_sdk.core.framework.framework_factory import FrameworkFactory
 from .config_loader import load_config
 from .enums import GrantType, IssuerRouteTypes, PromptTypes
 from .login_options import LoginOptions
@@ -53,7 +52,8 @@ class OAuth:
         self.host = host or os.getenv("KINDE_HOST", "https://app.kinde.com")
         self.audience = audience or os.getenv("KINDE_AUDIENCE")
         self.state = state
-        self.framework = framework
+        # Make Flask the default framework for this SDK
+        self.framework = framework or "flask"
         self.app = app
         
         # Validate required configurations
@@ -74,11 +74,11 @@ class OAuth:
         # Create storage manager
         self._storage_manager = StorageManager()
         
-        # Initialize framework if specified (this will also set up framework-specific storage)
-        if framework:
-            self._initialize_framework()
+        # Initialize Flask framework by default (first-class citizen)
+        if self.framework == "flask":
+            self._initialize_flask()
         else:
-            # Use configuration-based storage if no framework specified
+            # Use configuration-based storage for non-Flask explicit cases
             self._storage = StorageFactory.create_storage(storage_config)
             self._storage_manager.initialize(config=storage_config, storage=self._storage)
 
@@ -93,37 +93,27 @@ class OAuth:
         self.proxy = None
         self.proxy_headers = None
 
-    def _initialize_framework(self) -> None:
+    def _initialize_flask(self) -> None:
         """
-        Initialize the framework-specific components.
-        This will set up the framework and its associated storage.
+        Initialize Flask-specific components and storage directly.
         """
-        if not self.framework:
-            raise KindeConfigurationException("Framework must be specified for initialization")
+        try:
+            # Ensure flask framework and registration code is imported
+            from kinde_flask.framework.flask_framework import FlaskFramework
+            import kinde_flask  # triggers storage factory registration for 'flask'
+        except Exception as ex:
+            raise KindeConfigurationException(f"Failed to initialize Flask integration: {ex}")
 
-        # Get the framework implementation from the factory
-        framework_impl = FrameworkFactory.create_framework(
-            config={"type": self.framework},
-            app=self.app
-        )
-
-        # Set the OAuth instance in the framework
+        framework_impl = FlaskFramework(app=self.app)
         framework_impl.set_oauth(self)
-
-        # Start the framework (this will set up middleware and routes)
         framework_impl.start()
-
-        # Store the framework implementation
         self._framework = framework_impl
 
-        # Create storage using the framework's storage factory
-        self._storage = StorageFactory.create_storage({"type": self.framework})
-        
-        # Initialize storage manager with the framework-specific storage
-        self._storage_manager.initialize(config={"type": self.framework, "device_id": self._framework.get_name()}, storage=self._storage)
+        # Use the Flask storage via StorageFactory
+        self._storage = StorageFactory.create_storage({"type": "flask"})
+        self._storage_manager.initialize(config={"type": "flask", "device_id": self._framework.get_name()}, storage=self._storage)
 
-        # Log runtime storage backend details
-        self._log_storage_backend("initialize_framework")
+        self._log_storage_backend("initialize_flask")
 
     def _log_storage_backend(self, context: str) -> None:
         """

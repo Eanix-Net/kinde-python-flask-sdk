@@ -103,17 +103,7 @@ class FrameworkFactory:
             # Try to get the framework class
             framework_class = cls._frameworks.get(framework_type)
             if framework_class is None:
-                # If not found, try auto-detection
-                for name, impl in cls._frameworks.items():
-                    # Create an instance to check auto-detection
-                    instance = impl(app)
-                    if hasattr(instance, 'can_auto_detect') and instance.can_auto_detect():
-                        logger.info(f"Auto-detected framework: {name}")
-                        framework_class = impl
-                        break
-                
-                if framework_class is None:
-                    raise ValueError(f"Framework not found: {framework_type}")
+                raise ValueError(f"Framework not found: {framework_type}")
             
             # Create and store the framework instance
             cls._framework_instance = framework_class(app)

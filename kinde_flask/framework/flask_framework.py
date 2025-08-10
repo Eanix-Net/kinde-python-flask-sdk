@@ -9,7 +9,7 @@ import asyncio
 import threading
 import logging
 import nest_asyncio
-from flask_session import Session
+import flask
 
 if TYPE_CHECKING:
     from flask import Request
@@ -32,10 +32,8 @@ class FlaskFramework(FrameworkInterface):
         self._initialized = False
         self._oauth = None
         
-        # Configure Flask session
+        # Configure Flask application secret (for client-side sessions)
         self.app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')
-        self.app.config['SESSION_TYPE'] = 'filesystem'
-        self.app.config['SESSION_PERMANENT'] = False
         
         # Enable nested event loops
         nest_asyncio.apply()
@@ -247,16 +245,3 @@ class FlaskFramework(FrameworkInterface):
                 return self._oauth.get_user_info(request)
             except Exception as e:
                 return f"Failed to get user info: {str(e)}", 400
-    
-    def can_auto_detect(self) -> bool:
-        """
-        Check if this framework can be auto-detected.
-        
-        Returns:
-            bool: True if Flask is installed and available
-        """
-        try:
-            import flask
-            return True
-        except ImportError:
-            return False
