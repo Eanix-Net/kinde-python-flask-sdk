@@ -114,7 +114,7 @@ class OAuth:
 
         # Use the Flask storage via StorageFactory
         self._storage = StorageFactory.create_storage({"type": "flask"})
-        self._storage_manager.initialize(config={"type": "flask", "device_id": self._framework.get_name()}, storage=self._storage)
+        self._storage_manager.initialize(config={"type": "flask", "device_id": self._session_manager.get_device_id()}, storage=self._storage)
 
         self._log_storage_backend("initialize_flask")
 
@@ -124,15 +124,10 @@ class OAuth:
         verify that framework storage is wired correctly at runtime.
         """
         try:
-            storage = self._storage_manager.storage
+            storage = self._storage_manager.storage()
             storage_cls = type(storage).__name__ if storage is not None else "None"
             storage_type = getattr(self._storage_manager, "storage_type", "unknown")
             self._logger.info(f"[{context}] Storage backend class={storage_cls} storage_type={storage_type}")
-            if self.framework == "flask" and "FlaskStorage" not in storage_cls:
-                self._logger.warning(
-                    f"[{context}] Expected FlaskStorage when framework='flask' but got {storage_cls}. "
-                    "Ensure 'kinde_flask' is imported before OAuth initialization and that OAuth(framework='flask', app=app) is used."
-                )
         except Exception as e:
             self._logger.error(f"[{context}] Failed to log storage backend: {e}")
 
