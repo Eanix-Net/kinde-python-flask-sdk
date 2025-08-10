@@ -34,6 +34,8 @@ class FlaskFramework(FrameworkInterface):
         
         # Enable nested event loops
         nest_asyncio.apply()
+
+        self._register_kinde_routes()
     
     def get_name(self) -> str:
         """

@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 
 from .user_session import UserSession
 from kinde_sdk.core.storage.storage_manager import StorageManager
+import kinde_sdk.core.exceptions as core_exceptions
 from kinde_sdk.core.storage.storage_factory import StorageFactory
 from .config_loader import load_config
 from .enums import IssuerRouteTypes, PromptTypes
@@ -511,7 +512,7 @@ class OAuth:
             self._logger.warning(f"stored_state: {stored_state}, state: {state}")
             if not stored_state or state != stored_state.get("value"):
                 self._logger.error(f"State mismatch: received {state}, stored {stored_state}")
-                raise KindeLoginException("Invalid state parameter")
+                raise core_exceptions.KindeLoginException("Invalid state parameter")
         
         # Get code verifier for PKCE
         code_verifier = None
