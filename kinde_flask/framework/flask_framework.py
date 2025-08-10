@@ -1,7 +1,6 @@
 from typing import Optional, Dict, Any, TYPE_CHECKING
 from flask import Flask, request, redirect, session
 from kinde_sdk.core.framework.framework_interface import FrameworkInterface
-from kinde_sdk.auth.oauth import OAuth
 from ..middleware.framework_middleware import FrameworkMiddleware
 import os
 import uuid
@@ -13,6 +12,7 @@ import flask
 
 if TYPE_CHECKING:
     from flask import Request
+    from kinde_sdk.auth.oauth import OAuth
 
 class FlaskFramework(FrameworkInterface):
     """
@@ -35,7 +35,6 @@ class FlaskFramework(FrameworkInterface):
         # Enable nested event loops
         nest_asyncio.apply()
 
-        self._register_kinde_routes()
     
     def get_name(self) -> str:
         """
@@ -109,7 +108,7 @@ class FlaskFramework(FrameworkInterface):
             return None
         return session_id
     
-    def set_oauth(self, oauth: OAuth) -> None:
+    def set_oauth(self, oauth) -> None:
         """
         Set the OAuth instance for this framework.
         
@@ -128,7 +127,6 @@ class FlaskFramework(FrameworkInterface):
         Register all Kinde-specific routes with the Flask application.
         """
         # Login route
-        @self.app.route('/login')
         def login():
             """Redirect to Kinde login page."""
             loop = asyncio.get_event_loop()
@@ -136,7 +134,6 @@ class FlaskFramework(FrameworkInterface):
             return redirect(login_url)
 
         # Callback route
-        @self.app.route("/callback")
         def callback():
             """Handle the OAuth callback from Kinde."""
             import base64
@@ -215,7 +212,6 @@ class FlaskFramework(FrameworkInterface):
             return redirect(post_login_redirect)
         
         # Logout route
-        @self.app.route('/logout')
         def logout():
             """Logout the user and redirect to Kinde logout page."""
             user_id = session.get('user_id')
@@ -225,7 +221,6 @@ class FlaskFramework(FrameworkInterface):
             return redirect(logout_url)
         
         # Register route
-        @self.app.route('/register')
         def register():
             """Redirect to Kinde registration page."""
             loop = asyncio.get_event_loop()
@@ -233,7 +228,6 @@ class FlaskFramework(FrameworkInterface):
             return redirect(register_url)
         
         # User info route
-        @self.app.route('/user')
         def get_user():
             """Get the current user's information."""
             try:
@@ -249,3 +243,10 @@ class FlaskFramework(FrameworkInterface):
                 return self._oauth.get_user_info(request)
             except Exception as e:
                 return f"Failed to get user info: {str(e)}", 400
+
+        # Register routes using add_url_rule to avoid decorator edge cases
+        self.app.add_url_rule('/login', 'kinde_login', login)
+        self.app.add_url_rule('/callback', 'kinde_callback', callback)
+        self.app.add_url_rule('/logout', 'kinde_logout', logout)
+        self.app.add_url_rule('/register', 'kinde_register', register)
+        self.app.add_url_rule('/user', 'kinde_user', get_user)

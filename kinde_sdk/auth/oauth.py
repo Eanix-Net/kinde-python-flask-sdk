@@ -18,8 +18,7 @@ from kinde_sdk.core.exceptions import (
     KindeConfigurationException,
     KindeLoginException,
     KindeTokenException,
-    KindeRetrieveException,
-    KindeStorageException
+    KindeRetrieveException
 )
 
 class OAuth:
@@ -30,7 +29,6 @@ class OAuth:
         redirect_uri: Optional[str] = None,
         config_file: Optional[str] = None,
         storage_config: Optional[Dict[str, Any]] = None,
-        framework: Optional[str] = None,
         audience: Optional[str] = None,
         host: Optional[str] = None,
         state: Optional[str] = None,
@@ -55,7 +53,7 @@ class OAuth:
         self.audience = audience or os.getenv("KINDE_AUDIENCE")
         self.state = state
         # Make Flask the default framework for this SDK
-        self.framework = framework or "flask"
+        self.framework = "flask"
         self.app = app
         
         # Validate required configurations
@@ -71,6 +69,8 @@ class OAuth:
             storage_config = self._config.get("storage", {"type": "memory"})
         elif storage_config is None:
             storage_config = {"type": "memory"}
+            self._config = {"storage": storage_config}
+        elif storage_config is not None:
             self._config = {"storage": storage_config}
 
         # Create storage manager
