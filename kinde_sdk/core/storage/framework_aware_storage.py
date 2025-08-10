@@ -41,6 +41,7 @@ class FrameworkAwareStorage(StorageInterface):
         db = int(db_path) if db_path else 2
 
         self._client = redis.StrictRedis(host=host, port=port, db=db)
+        self._logger.info(f"Redis client initialized for host '{host}', port '{port}', db '{db}'")
 
     def _is_state_like(self, key: str) -> bool:
         lowered = key.lower()
@@ -70,6 +71,7 @@ class FrameworkAwareStorage(StorageInterface):
                 return None
             if isinstance(raw, bytes):
                 raw = raw.decode("utf-8")
+            self._logger.info(f"Redis get successful for key '{key}' value '{raw}'")
             return json.loads(raw)
         except Exception as ex:
             self._logger.warning(f"Redis get failed for key '{key}': {ex}")
@@ -82,6 +84,7 @@ class FrameworkAwareStorage(StorageInterface):
                 self._client.setex(key, self._state_ttl, data)
             else:
                 self._client.set(key, data)
+            self._logger.info(f"Redis set successful for key '{key}'")
         except Exception as ex:
             self._logger.warning(f"Redis set failed for key '{key}': {ex}")
 
