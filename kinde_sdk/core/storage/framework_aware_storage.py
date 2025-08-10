@@ -23,6 +23,7 @@ class FrameworkAwareStorage(StorageInterface):
 
     def __init__(self, redis_url: Optional[str] = None, state_ttl_seconds: Optional[int] = None):
         self._logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.DEBUG)
 
         if redis is None:
             raise RuntimeError("redis package is required for FrameworkAwareStorage")
