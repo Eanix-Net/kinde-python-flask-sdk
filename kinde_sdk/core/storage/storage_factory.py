@@ -58,9 +58,5 @@ class StorageFactory:
                 return RedisStorageFactory.create_storage(config)
         
         # Default: Try RedisStorage first, fallback to memory
-        logger.info("No storage type specified; trying Redis as primary, fallback to memory")
-        try:
-            return RedisStorageFactory.create_storage(config)
-        except Exception as e:
-            logger.info(f"Redis not available, using memory storage: {str(e)}")
-            return MemoryStorage()
+        logger.info("No storage type specified; trying Redis as primary, fallback to redis one more time")
+        return RedisStorageFactory.create_storage(config)
