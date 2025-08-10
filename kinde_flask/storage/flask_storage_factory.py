@@ -4,7 +4,10 @@ from kinde_sdk.core.storage.storage_interface import StorageInterface
 import logging
 import os
 import json
+from urllib.parse import urlparse
 
+# TODO: This is a hack to get the redis client to work with the redis container.
+# We should use the redis client from the kinde_sdk package instead.
 try:
     import redis  # type: ignore
 except Exception:  # pragma: no cover
@@ -25,9 +28,14 @@ class FlaskStorage(StorageInterface):
         if redis is None:
             raise RuntimeError("redis package is required for FlaskStorage")
 
-        self._redis_url = redis_url or os.getenv("KINDE_REDIS_URL", "redis://localhost:6379/0")
+        self._redis_url = redis_url or os.getenv("KINDE_REDIS_URL", "redis://redis:6379/0")
         self._state_ttl = state_ttl_seconds or int(os.getenv("KINDE_STATE_TTL", "600"))
-        self._client = redis.from_url(self._redis_url)
+        # Parse redis_url into host, port, and db:
+        parsed_url = urlparse(self._redis_url)
+        host = parsed_url.hostname
+        port = int(parsed_url.port)
+        db = int(parsed_url.path.lstrip("/"))
+        self._client = redis.StrictRedis(host=host, port=port, db=db)
 
     def _should_apply_state_ttl(self, key: str) -> bool:
         lowered = key.lower()
